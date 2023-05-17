@@ -1,14 +1,17 @@
 #lang racket
-(define (PDC-sol size initial);size(int) = size x size, initial = (x, y)
-  (sol_aux size (list initial) (possibleMoves initial size (list initial))) ;lista de movimientos -> 1.posicion inicial (initial)
-  
-  )
+
+;                   ______________________________________________________________________________
+;__________________/ PDC-sol
+
+;size(int) = size x size, initial = (x, y)
+(define (PDC-sol size initial)
+  (sol_aux size (list initial) (possibleMoves initial size (list initial)))) ;lista de movimientos -> 1.posicion inicial (initial)
 
 (define (sol_aux size mov pmoves)
   (cond((equal? (getsize mov) (* size size)) mov) ;Se recorrio todo el tablero 
        ((null? mov) "No hay solucion, fin del tour")
        ((null? pmoves)
-        (display "vacio")
+        (display "vacio") 
         (sol_aux size mov (cdr pmoves)))
        (else
         (sol_aux size (append mov (list (car (quicksort pmoves size mov)))) (possibleMoves (car (quicksort pmoves size mov)) size (append mov (list (car (quicksort pmoves size mov))))))
@@ -64,7 +67,7 @@
         ((eq? (miembro (car pmoves) mov) #t) (visited (cdr pmoves) mov)) ;se encontro una coincidencia = eliminar y seguir
         (else (cons (car pmoves) (visited (cdr pmoves) mov)))))
 
-(define (miembro pos mov) ;pos = elemento en pmoves 
+(define (miembro pos mov) ;pos = elemento en pmoves, mov = matriz de movimientos
   (cond ((null? mov) #f)
         ((and (equal? (car pos) (caar mov)) (equal? (cadr pos) (cadar mov))) #t)
         (else (miembro pos (cdr mov)))))
@@ -77,4 +80,63 @@
   (cond((null? matrix) i)
        (else (getsize_aux (cdr matrix) (add1 i)))))
 
-(PDC-sol 8 '(1 1))
+
+;                   ______________________________________________________________________________
+;__________________/ PDC-test
+
+(define (PDC-test size sol)
+  (cond((equal? (getsize sol) size) (test_aux size (getMov size sol) (list (car sol))))
+       (else "No es solucion el tamaño no calza")
+  ))
+
+(define (test_aux size sol mov)
+  (cond((or (null? mov) (null? sol)) "No es solucion")
+       ((equal? (getsize sol) 1) "si es una posible solucion") ;llego al ultimo movimiento
+       ((eq? (miembro (cadr sol) (possibleMoves (car sol) size mov)) #t) (test_aux size (cdr sol) (append mov (list(cadr sol)))))
+       (else "No es solucion")))
+
+(define (getMov size sol)
+  (getMov_aux size sol '() 1)
+  )
+
+(define (getMov_aux size sol mov i)
+  (cond((equal? (getsize mov) (* size size)) mov)
+       ((null? (getPos i sol)) '()) ;no se encontro el siguiente elemento -> no es solucion 
+       (else (getMov_aux size sol (append mov (list (getPos i sol))) (add1 i)))))
+
+(define (getPos ele matrix)
+  (getPos_aux ele matrix 1))
+
+(define (getPos_aux ele matrix i)
+  (cond((null? matrix) '()) ;no se encontro el elemento
+       ((> (searchRow ele (car matrix) 1) 0) (append (list i) (list (searchRow ele (car matrix) 1))))
+       (else (getPos_aux ele (cdr matrix) (add1 i)))))
+
+(define (searchRow ele row j)
+  (cond ((null? row) 0)
+        ((equal? ele (car row)) j)
+        (else (searchRow ele (cdr row) (add1 j)))))
+
+        
+  
+
+
+;(PDC-sol 5 '(1 1))
+
+#|(PDC-test 5 '((1 16 21 10 7)
+              (22 11 8 15 20)
+              (17 2 23 6 9)
+              (12 25 4 19 14)
+              (3 18 13 24 5)))
+
+(PDC-test 5 '((1 14 9 20 3)
+              (24 19 2 15 10)
+              (13 8 23 4 21)
+              (18 25 6 11 16)
+              (7 12 17 22 5))
+
+(PDC-test 5 '((1 16 21 10 7)
+              (22 11 8 15 20)
+              (17 2 23 6 9)
+              (12 25 4 19 14)
+              (3 18 13 24 4)) |#
