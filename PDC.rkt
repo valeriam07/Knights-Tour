@@ -82,7 +82,7 @@
        (else (getsize_aux (cdr lst) (add1 i)))))
 
 (define (solutionBoard size sol row board i j)
-  (cond((equal? i size) (printMatrix board))
+  (cond((> i size) (printMatrix board))
        ((> j size) (solutionBoard size sol '() (append board (list row)) (add1 i) 1))
        (else (solutionBoard size sol (append row (list (getSequence (list i j) sol 1))) board i (add1 j)))))
 
