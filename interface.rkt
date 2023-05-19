@@ -17,7 +17,9 @@
 (define matrix 0)
 (define (button-callback b e)
   (let ((text matrix) )
-  
+;                         __________________________________________________________________________
+;________________________/ inputs
+    
   (PDC-Paint 5 '((1 14 9 20 3)(24 19 2 15 10)(13 8 23 4 21)(18 25 6 11 16)(7 12 17 22 5)))))
 
 (define dc (new bitmap-dc% [bitmap target]))
@@ -113,8 +115,6 @@
           (set! x-af (list-ref (list-ref sol 1)0))
           (set! y-af (list-ref (list-ref sol 1)1))
           (send dc draw-line (+ 10 x-be) (+ 10 y-be) (+ 10 x-af) (+ 10 y-af)) 
-          ;(sleep/yield 0.5)
-          
           (animation (cdr sol) dc)
           ]
        )
