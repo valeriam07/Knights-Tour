@@ -193,7 +193,7 @@
   
 
 
-(PDC-Sol 5 '(1 1))
+;(PDC-Sol 5 '(1 1))
 
 #|(PDC-test 5 '((1 16 21 10 7)
               (22 11 8 15 20)
@@ -217,50 +217,172 @@
 ;__________________/ PDC-Todas
 
 
-(define (PDC-todas size initial)
-  (todas_aux size initial '() (PDC-Sol size initial)))
+;Function that returns 5 possible solutions for the knight's tour,
+;Parameters: size is the board size, position is the initial position
 
-(define (todas_aux size initial soluciones sol) ;soluciones = matriz de matrices (soluciones), sol = matriz solucion actual
-  (cond((= (getsize soluciones) 5) soluciones)
-       ((eq? (miembro sol soluciones) #f)
-        (displayln sol)
-        (todas_aux size initial (append soluciones sol) (PDC-sol3 size initial)))
-       (else (todas_aux size initial soluciones ((sol_aux3 size (list initial) (possibleMoves initial size (list initial)) initial))))))
+(define (PDC-Todas size position)
+ (printTodas size (getFive (PDC-TodasAux size position) 5) 1))
 
-;Function that generates a third possible solution
-(define (PDC-sol3 size initial)
-  (sol_aux3 size (list initial) (possibleMoves initial size (list initial)) initial))
+(define (printTodas size todas i)
+  (cond((not (null? todas))
+        (printf "Solucion ~a\n" i)
+        (solutionBoard size (car todas))
+        (displayln " -☆- ")
+        (printTodas size (cdr todas) (add1 i)))))
 
-;Auxiliary function for recursion
-(define (sol_aux3 size mov pmoves random)
-  (cond((equal? (getsize mov) (* size size)) mov) 
-       ((null? mov) "No hay solucion, fin del tour")
-       ((null? pmoves)
-        ;(display "tercer vacio") 
-        (sol_aux3 size mov (eliminar pmoves random) (randomElement (eliminar pmoves random))))
-       ((> (getsize mov) 4) (sol_aux size (append mov (list (car (quicksort pmoves size mov)))) (possibleMoves (car (quicksort pmoves size mov)) size (append mov (list (car (quicksort pmoves size mov)))))))
-       (else
-        (sol_aux3 size (append mov (list random)) (possibleMoves random size (append mov (list random))) (randomElement (possibleMoves random size (append mov (list random)))))
-       )))
+(define (PDC-TodasAux size position)
+  (cond((validInput? size position)
+        (getSteps(getMoves position size '() ) size (list position) (current-seconds)))
+  (else(
+        (current-output-port)
+        "Valor de entrada inválido"))))
+
+;Gets the first five elements of a list
+(define (getFive lst n)
+  (cond
+    [(or (null? lst) (zero? n)) '()]
+    [else (cons (car lst) (getFive (cdr lst) (- n 1)))]))
+
+;in_bounds?, verifies is the position is inside the board limits
+;size: boardsize
+;x-y: ordered pair position on board
+(define (inBoard? x y size)
+  (and (and (> x 0)
+            (> y 0))
+       (and (<= x size )
+            (<= y size ))))
+
+;Calculate euclidean distance between two points
+;Parameters: point 1, point 2
+;Output: euclidean distance
+
+(define (euclidean point1 point2)
+  (sqrt(+(expt (- (car point1) (car point2)) 2)
+         (expt (- (cadr point1) (cadr point2)) 2))))
+
+;checks if an element is inside a list
+(define (contains? _list element)
+  (cond
+    ((null? _list) #f)
+    ((equal? (car _list) element) #t)
+    (else (contains? (cdr _list) element))
+    )
+  )
+
+;Checks if the knights mov is allowed (neighbor cell)
+(define (neighbor point1 point2)
+  (equal? (euclidean point1 point2)
+          (sqrt 5)))
+
+;Checks if the solution is valid, if not, returns the last correct movement
+(define (solution? solution size)
+  (solution_aux solution size '()))
+
+;recursive auxilary function for solution?
+(define (solution_aux solution size visited)
+  (cond
+    ((null? solution)
+     (list #f solution))
+    ((null? (cdr solution))
+     (cond
+       ((and (inBoard? (caar solution) (cadar solution) size)
+             (equal? (+ (length visited) 1) (expt size 2)))
+        (list #t (append visited (list (car solution)))))
+     (else (list #f visited))))
+    ((and (and (inBoard? (caar solution) (cadar solution) size)
+               (neighbor (car solution) (cadr solution)))
+          (not (contains? visited (car solution))))
+     (solution_aux (cdr solution) size (append visited (list (car solution)))))
+    (else (list #f visited))))
+
+;Verifies if the parameters of a function is valid 
+(define (validInput? size start)
+    (and
+      (and (integer? size) (positive? size))
+      (and (and (integer? (car start)) (integer? (cadr start)))
+           (inBoard? (car start) (cadr start) size))))
+
+;getSteps backtracks in order to solve the problem, moves is the list with possible moves (neighbors) and the path is the tour trveled by the knight
+(define(getSteps moves size paths time)
+  (cond
+    [(> (- (current-seconds) time) 60) (list)];the time parameter is set as a timeout mechanism to terminate the recursion
+    [(and (empty? moves) (= (length  paths) (* size size))) (list paths)]
+    [(empty? moves) '()]
+    [(and (empty? (getMoves (car moves) size paths)) (= (length paths) (- (* size size) 1))) (getSteps (cdr moves) size (append paths (list(car moves))) time)]
+    [(empty? (getMoves (car moves) size paths)) (getSteps (cdr moves) size paths time)]
+    [else (append (getSteps (getMoves (car moves) size (cons (car moves) paths)) size (append paths (list (car moves))) time)
+                  (getSteps (cdr moves) size paths time))]))
+
+;generates a list with coordinates and deletes the ones already visited
+(define (getMoves position size paths)
+  (deletePaths paths (moveScope size (buildListMoves (movUp_Right (car position) (cadr position))
+                                                     (movUp_Left (car position) (cadr position))
+                                                     (movDown_Right (car position) (cadr position))
+                                                     (movDown_Left (car position) (cadr position))
+                                                     (movRight_Top (car position) (cadr position))
+                                                     (movRight_Bott(car position) (cadr position))
+                                                     (movLeft_Top (car position) (cadr position))
+                                                     (movLeft_Bott (car position) (cadr position))))))
 
 
-;Function that picks a random element from a list
-(define (randomElement list)
-  (display (getsize list))
-  (cond((equal? (getsize list) 0) '(0,0))
-       (else (getElement list (random (getsize list))))
-))
 
-;Function that gets an element of a list given an index
-(define (getElement list index)
-  (cond ((null? list) (display "Index out of bounds"))
-        ((= index 0) (car list))
-        (else (getElement (cdr list) (- index 1)))))
+;deletes the coordinate already visited and looks pathe in order to verify if any new position was already visited as well and deletes it too.
+(define (deletePaths paths moves)
+  (cond
+    [(empty? moves) '()]
+    [(lookingPaths (car moves) paths ) (deletePaths paths (cdr moves))]
+    [else (cons (car moves) (deletePaths paths (cdr moves)))]))
 
-(define (eliminar lista ele)
-  (cond ((null? lista) '())
-        ((number? lista) (list'()))
-        ((equal? ele (car lista)) (eliminar (cdr lista) ele))
-        (else (cons (car lista) (eliminar (cdr lista) ele)))))
 
-;(PDC-todas 5 '(1 1))
+;Verifies if the coordinate is already in the tour, if its already on it, deletes it.
+(define (lookingPaths position paths)
+  (cond
+    [(= (length paths) 0) #f]
+    [(equal? (car paths) position) #t]
+    [else (lookingPaths position ( cdr paths ))]))
+
+
+;Creates a list with only the movements inside the board and using movInside checks and deletes unnecesary positions
+(define (moveScope size moves)
+  (cond
+    [(empty? moves) '()]
+    [(movInside? (car moves) size ) (cons (car moves) (moveScope size (cdr moves)))]
+    [else (moveScope size (cdr moves))]))
+
+
+;checks if the position is inside or not the board bounds
+(define (movInside? position size)
+  (cond
+    [(and (and (<= (car position) size)  (<= (cadr position) size))  (and (> (car position) 0) (> (cadr position) 0))) #t]
+    [else #f]))
+
+;creates a list with all the coordinates of possible moves according to the allowed Knight movement.
+(define (buildListMoves UR UL DR DL RT RB LT LB)
+  (list UR UL DR DL RT RB LT LB))
+
+;gets the coordinate up and right
+(define (movUp_Right row column)
+  (list (- row 2) (+ column 1)))
+;gets the coordinate up and left
+(define (movUp_Left row column)
+  (list (- row 2) (- column 1)))
+;gets the coordinate down and right
+(define (movDown_Right row column)
+  (list (+ row 2) (+ column 1)))
+;gets the coordinate down and left
+(define (movDown_Left row column)
+  (list (+ row 2) (- column 1)))
+;gets the coordinate right and up
+(define (movRight_Top row column)
+  (list (- row 1) (+ column 2)))
+;gets the coordinate right and down
+(define (movRight_Bott row column)
+  (list (+ row 1) (+ column 2)))
+;gets the coordinate left and up
+(define (movLeft_Top row column)
+  (list (- row 1) (- column 2)))
+;gets the coordinate left and down
+(define (movLeft_Bott row column)
+  (list (+ row 1) (- column 2)))
+
+(PDC-Todas 5 '(1 1))
