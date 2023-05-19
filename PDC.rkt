@@ -1,12 +1,14 @@
 #lang racket
 
 ;                   ______________________________________________________________________________
-;__________________/ PDC-sol
+;__________________/ PDC-Sol
 
-;size(int) = size x size, initial = (x, y)
-(define (PDC-sol size initial)
-  ;(sol_aux size (list initial) (possibleMoves initial size (list initial)))
-  (solutionBoard size (sol_aux size (list initial) (possibleMoves initial size (list initial))) '() '() 1 1)) ;lista de movimientos -> 1.posicion inicial (initial)
+;Generates one solution for the knight's tour
+;Parameters: size of the chess board, initial position of the knight (x, y)
+;Output: matrix solution by position order
+
+(define (PDC-Sol size initial)
+  (solutionBoard size (sol_aux size (list initial) (possibleMoves initial size (list initial))))) ;lista de movimientos -> 1.posicion inicial (initial)
 
 (define (sol_aux size mov pmoves)
   (cond((equal? (getsize mov) (* size size)) mov) ;Se recorrio todo el tablero 
@@ -18,8 +20,11 @@
         (sol_aux size (append mov (list (car (quicksort pmoves size mov)))) (possibleMoves (car (quicksort pmoves size mov)) size (append mov (list (car (quicksort pmoves size mov))))))
        )))
 
-;Quicksort -> organiza la matriz de posibles movimientos segun el numero de vecinos de cada uno 
-(define (quicksort lista size mov) ;lista = pmoves
+;Sort possible moves matrix based on the neighbour count using quicksort algorithm 
+;Parameters: possible moves matrix, size of the chess board, moves made matrix
+;Output: Organized by neighbour count possible moves matrix
+
+(define (quicksort lista size mov) 
   (cond ((null? lista) '())
         (else (append (quick_menores lista (neighbour-count lista size mov) size mov)
                       (list(car lista))
@@ -35,17 +40,26 @@
         ((> (neighbour-count lista size mov) pivote) (quicksort (cons (car lista) (quick_mayores (cdr lista) pivote size mov)) size mov))
         (else (quick_mayores (cdr lista) pivote size mov)) ))
   
-;Asignar numero de vecinos de cada posible movimiento 
+;Asign neighbour count value of a possible move
+;Parameters: possible moves matrix, size of the chess board, moves made matrix
+;Output: Number of accesible positions of a move
+
 (define (neighbour-count pmoves size mov)
   (getsize (possibleMoves (car pmoves) size mov))) ;retorna numero de vecinos
   
-;Ultimo elemento de la lista mov = posicion actual
+;Gets last element of a list
+;Parameter: list
+;Output: last element
+
 (define (last-element lst)
   (cond ((null? (cdr lst)) (car lst))
         (else (last-element (cdr lst)))))
 
   
-;Generar lista de posibles movimientos a partir de una posicion
+;Generates the list of possible movements from a position in the chess board
+;Parameters: position, size of the board, matrix of previously made moves
+;Output: possible moves matrix
+
 (define (possibleMoves pos size mov)
   (visited (validate (list (cons (- (car pos) 2) (cons (+ (cadr pos) 1) '()))
                            (cons (- (car pos) 2) (cons (- (cadr pos) 1) '()))
@@ -56,24 +70,38 @@
                            (cons (+ (car pos) 2) (cons (+ (cadr pos) 1) '()))
                            (cons (+ (car pos) 2) (cons (- (cadr pos) 1) '()))) size) mov))
        
-;Eliminar movimientos invalidos/fuera del tablero
+
+;Delete invalid movements (out of the board) from possible moves matrix
+;Parameters: possible moves matrix, size of the board
+;Output: possible moves without out of the board movements
+
 (define (validate pmoves size)
   (cond ((null? pmoves) '())
         ((or(< (caar pmoves) 1) (> (caar pmoves) size) (< (cadar pmoves) 1) (> (cadar pmoves) size))(validate (cdr pmoves) size))
         (else (cons (car pmoves) (validate (cdr pmoves) size)))))
 
 ;Eliminar movimientos hacia casillas ya visitadas
+;Delete movements to already visited positions
+;Parameters: possible moves matrix, size of the board
+
 (define (visited pmoves mov)
   (cond ((null? pmoves) '()) ;se recorrio todo pmoves -> fin, no se repite
         ((eq? (miembro (car pmoves) mov) #t) (visited (cdr pmoves) mov)) ;se encontro una coincidencia = eliminar y seguir
         (else (cons (car pmoves) (visited (cdr pmoves) mov)))))
 
-(define (miembro pos mov) ;pos = elemento en pmoves, mov = matriz de movimientos
-  (cond ((null? mov) #f)
-        ((and (equal? (car pos) (caar mov)) (equal? (cadr pos) (cadar mov))) #t)
-        (else (miembro pos (cdr mov)))))
+;Determines whether an element is in a list or not
+;Parameters: element, list
+;Output: Boolean
 
-;Obtener numero de filas de una matriz
+(define (miembro ele lst)
+  (cond ((null? lst) #f)
+        ((and (equal? (car ele) (caar lst)) (equal? (cadr ele) (cadar lst))) #t)
+        (else (miembro ele (cdr lst)))))
+
+;Get size of a list
+;Parameters: list
+;Output: size
+
 (define (getsize lst)
   (getsize_aux lst 0))
 
@@ -81,16 +109,29 @@
   (cond((null? lst) i)
        (else (getsize_aux (cdr lst) (add1 i)))))
 
-(define (solutionBoard size sol row board i j)
-  (cond((> i size) (printMatrix board))
-       ((> j size) (solutionBoard size sol '() (append board (list row)) (add1 i) 1))
-       (else (solutionBoard size sol (append row (list (getSequence (list i j) sol 1))) board i (add1 j)))))
+;Transforms solution matrix that goes by positions to a board-like solution
+;Parameters: size of the board, positions solution matrix
+;Output: Board type solution
 
-;Retorna posicion dentro de la secuencia de movimientos
+(define (solutionBoard size sol)
+  (solutionBoard_aux size sol '() '() 1 1))
+
+(define (solutionBoard_aux size sol row board i j)
+  (cond((> i size) (printMatrix board))
+       ((> j size) (solutionBoard_aux size sol '() (append board (list row)) (add1 i) 1))
+       (else (solutionBoard_aux size sol (append row (list (getSequence (list i j) sol 1))) board i (add1 j)))))
+
+;Gets position of an element in movement sequence matrix, number of step in the knight's tour
+;Parameters: element, matrix, index
+;Output: index of element
+
 (define (getSequence ele matrix i)
   (cond((null? matrix) '()) ;no se encontro el elemento
        ((equal? ele (car matrix)) i)
        (else (getSequence ele (cdr matrix) (add1 i)))))
+
+;Print a matrix
+;Parameter: matrix
 
 (define (printMatrix matrix)
   (cond((null? matrix) " -☆- ")
@@ -99,9 +140,13 @@
  
 
 ;                   ______________________________________________________________________________
-;__________________/ PDC-test
+;__________________/ PDC-Test
 
-(define (PDC-test size sol)
+;Tests a possible solution of the knight's tour
+;Parameters: size of the board, solution matrix
+;Output: Boolean
+
+(define (PDC-Test size sol)
   (cond((equal? (getsize sol) size) (test_aux size (getMov size sol) (list (car sol))))
        (else "No es solucion el tamaño no calza")
   ))
@@ -112,21 +157,30 @@
        ((eq? (miembro (cadr sol) (possibleMoves (car sol) size mov)) #t) (test_aux size (cdr sol) (append mov (list(cadr sol)))))
        (else "No es solucion")))
 
+;Transforms a board-like solution to a position sequence matrix
+;Parameters: size of the board, solution matrix
+;Output: position sequence solution matrix
+
+(provide getMov)
 (define (getMov size sol)
   (getMov_aux size sol '() 1)
   )
 
 (define (getMov_aux size sol mov i)
   (cond((equal? (getsize mov) (* size size)) mov)
-       ((null? (getPos i sol)) '()) ;no se encontro el siguiente elemento -> no es solucion 
+       ((null? (getPos i sol)) '()) ;index wasn't found, missing a number in sequence -> not a valid solution 
        (else (getMov_aux size sol (append mov (list (getPos i sol))) (add1 i)))))
 
-;Retona la posicion en la que se encuentra un elemento -> par ordenado
+
+;Gets position of an index (movement number) in the chess board
+;Parameters: element (index), board matrix
+;Output: position in the chess board
+
 (define (getPos ele matrix)
   (getPos_aux ele matrix 1))
 
 (define (getPos_aux ele matrix i)
-  (cond((null? matrix) '()) ;no se encontro el elemento
+  (cond((null? matrix) '())
        ((> (searchRow ele (car matrix) 1) 0) (append (list i) (list (searchRow ele (car matrix) 1))))
        (else (getPos_aux ele (cdr matrix) (add1 i)))))
 
@@ -139,7 +193,7 @@
   
 
 
-(PDC-sol 5 '(1 1))
+(PDC-Sol 5 '(1 1))
 
 #|(PDC-test 5 '((1 16 21 10 7)
               (22 11 8 15 20)
@@ -164,7 +218,7 @@
 
 
 (define (PDC-todas size initial)
-  (todas_aux size initial '() (PDC-sol size initial)))
+  (todas_aux size initial '() (PDC-Sol size initial)))
 
 (define (todas_aux size initial soluciones sol) ;soluciones = matriz de matrices (soluciones), sol = matriz solucion actual
   (cond((= (getsize soluciones) 5) soluciones)
