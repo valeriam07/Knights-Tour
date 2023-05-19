@@ -270,8 +270,6 @@
     [(lookingPaths (car moves) paths ) (deletePaths paths (cdr moves))]
     [else (cons (car moves) (deletePaths paths (cdr moves)))]))
 
-;lookingPaths, verifica si la coordenada se encuentra entre los recorridos(paths)
-;verifica si la posicion brindada por la lista moves ya se encuentra en el camino del caballo y si es asi la elimina
 
 ;Verifies if the coordinate is already in the tour, if its already on it, deletes it.
 (define (lookingPaths position paths)
