@@ -1,4 +1,3 @@
-
 #lang racket/gui
 
 (require racket/gui)
@@ -7,28 +6,19 @@
 (require "PDC.rkt")
 
 
-(define frame (new frame% [label "KnightTour"]
+(define frame (new frame%
+                   [label "KnightTour"]
                    [width 1100]
                    [height 800]))
-(define input (new text-field% [label "Enter a chessboard matrix "] [parent frame]))
-;(define input2 (new text-field% [label "Enter a chessboard solution "] [parent frame]))
 (define target (make-bitmap 1100 800))
 (define image-file "chess-knight.png")
 (define image (read-bitmap image-file))
 (define texto-input (make-parameter ""))
 (define matrix 0)
 (define (button-callback b e)
-  (let ((text (send input get-value)) )
-  (set! matrix (string->number text))
-  (cond((and(<= (string->number text) 16)(>= (string->number text) 5))
-          
-           (PDC-Paint text '((1 14 9 20 3)
-(24 19 2 15 10)
-(13 8 23 4 21)
-(18 25 6 11 16)
-(7 12 17 22 5)))
-           )      
-         (else (message-box "Error" "Invalid matrix, expecting 5x5 to 16x16" frame '(stop ok))))))
+  (let ((text matrix) )
+  
+  (PDC-Paint 5 '((1 14 9 20 3)(24 19 2 15 10)(13 8 23 4 21)(18 25 6 11 16)(7 12 17 22 5)))))
 
 (define dc (new bitmap-dc% [bitmap target]))
 (new button% [parent frame]
@@ -50,6 +40,8 @@
              [paint-callback
               (lambda (canvas dc)
                 (send dc clear)
+                (display num)
+                (set! matrix num)
                 (let ([Y 20] [X 20] [color 0] [num matrix] [colorChess matrix])
                 (send dc set-scale 4 4)
                 (send dc set-text-foreground "Sea Green")
@@ -75,7 +67,7 @@
                   ))
                 (define WIDTH 400)
                 (send dc draw-text "Knight's Tour" 0 0)
-                (define finalResult (getMov (string->number num) userSol))
+                (define finalResult (getMov num userSol))
                 (adjustSol finalResult dc)
             )]))
 
@@ -131,7 +123,6 @@
 (define msg (new message% [parent frame]
                           [label "submit "]))
 
- 
  
 ; Show the frame 
 (send frame show #t)
