@@ -5,7 +5,8 @@
 
 ;size(int) = size x size, initial = (x, y)
 (define (PDC-sol size initial)
-  (sol_aux size (list initial) (possibleMoves initial size (list initial)))) ;lista de movimientos -> 1.posicion inicial (initial)
+  ;(sol_aux size (list initial) (possibleMoves initial size (list initial)))
+  (solutionBoard size (sol_aux size (list initial) (possibleMoves initial size (list initial))) '() '() 1 1)) ;lista de movimientos -> 1.posicion inicial (initial)
 
 (define (sol_aux size mov pmoves)
   (cond((equal? (getsize mov) (* size size)) mov) ;Se recorrio todo el tablero 
@@ -73,13 +74,29 @@
         (else (miembro pos (cdr mov)))))
 
 ;Obtener numero de filas de una matriz
-(define (getsize matrix)
-  (getsize_aux matrix 0))
+(define (getsize lst)
+  (getsize_aux lst 0))
 
-(define (getsize_aux matrix i)
-  (cond((null? matrix) i)
-       (else (getsize_aux (cdr matrix) (add1 i)))))
+(define (getsize_aux lst i)
+  (cond((null? lst) i)
+       (else (getsize_aux (cdr lst) (add1 i)))))
 
+(define (solutionBoard size sol row board i j)
+  (cond((equal? i size) (printMatrix board))
+       ((> j size) (solutionBoard size sol '() (append board (list row)) (add1 i) 1))
+       (else (solutionBoard size sol (append row (list (getSequence (list i j) sol 1))) board i (add1 j)))))
+
+;Retorna posicion dentro de la secuencia de movimientos
+(define (getSequence ele matrix i)
+  (cond((null? matrix) '()) ;no se encontro el elemento
+       ((equal? ele (car matrix)) i)
+       (else (getSequence ele (cdr matrix) (add1 i)))))
+
+(define (printMatrix matrix)
+  (cond((null? matrix) " -☆- ")
+       (else (displayln (car matrix))
+             (printMatrix (cdr matrix)))))
+ 
 
 ;                   ______________________________________________________________________________
 ;__________________/ PDC-test
@@ -104,6 +121,7 @@
        ((null? (getPos i sol)) '()) ;no se encontro el siguiente elemento -> no es solucion 
        (else (getMov_aux size sol (append mov (list (getPos i sol))) (add1 i)))))
 
+;Retona la posicion en la que se encuentra un elemento -> par ordenado
 (define (getPos ele matrix)
   (getPos_aux ele matrix 1))
 
@@ -121,7 +139,7 @@
   
 
 
-;(PDC-sol 5 '(1 1))
+(PDC-sol 5 '(1 1))
 
 #|(PDC-test 5 '((1 16 21 10 7)
               (22 11 8 15 20)
@@ -140,3 +158,55 @@
               (17 2 23 6 9)
               (12 25 4 19 14)
               (3 18 13 24 4)) |#
+
+;                   ______________________________________________________________________________
+;__________________/ PDC-Todas
+
+
+(define (PDC-todas size initial)
+  (todas_aux size initial '() (PDC-sol size initial)))
+
+(define (todas_aux size initial soluciones sol) ;soluciones = matriz de matrices (soluciones), sol = matriz solucion actual
+  (cond((= (getsize soluciones) 5) soluciones)
+       ((eq? (miembro sol soluciones) #f)
+        (displayln sol)
+        (todas_aux size initial (append soluciones sol) (PDC-sol3 size initial)))
+       (else (todas_aux size initial soluciones ((sol_aux3 size (list initial) (possibleMoves initial size (list initial)) initial))))))
+
+;Function that generates a third possible solution
+(define (PDC-sol3 size initial)
+  (sol_aux3 size (list initial) (possibleMoves initial size (list initial)) initial))
+
+;Auxiliary function for recursion
+(define (sol_aux3 size mov pmoves random)
+  (cond((equal? (getsize mov) (* size size)) mov) 
+       ((null? mov) "No hay solucion, fin del tour")
+       ((null? pmoves)
+        ;(display "tercer vacio") 
+        (sol_aux3 size mov (eliminar pmoves random) (randomElement (eliminar pmoves random))))
+       ((> (getsize mov) 4) (sol_aux size (append mov (list (car (quicksort pmoves size mov)))) (possibleMoves (car (quicksort pmoves size mov)) size (append mov (list (car (quicksort pmoves size mov)))))))
+       (else
+        (sol_aux3 size (append mov (list random)) (possibleMoves random size (append mov (list random))) (randomElement (possibleMoves random size (append mov (list random)))))
+       )))
+
+
+;Function that picks a random element from a list
+(define (randomElement list)
+  (display (getsize list))
+  (cond((equal? (getsize list) 0) '(0,0))
+       (else (getElement list (random (getsize list))))
+))
+
+;Function that gets an element of a list given an index
+(define (getElement list index)
+  (cond ((null? list) (display "Index out of bounds"))
+        ((= index 0) (car list))
+        (else (getElement (cdr list) (- index 1)))))
+
+(define (eliminar lista ele)
+  (cond ((null? lista) '())
+        ((number? lista) (list'()))
+        ((equal? ele (car lista)) (eliminar (cdr lista) ele))
+        (else (cons (car lista) (eliminar (cdr lista) ele)))))
+
+;(PDC-todas 5 '(1 1))
