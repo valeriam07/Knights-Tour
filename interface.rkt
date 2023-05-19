@@ -4,34 +4,29 @@
 (require racket/gui)
 (require racket/draw)
 (require racket/gui/base)
-(require PDC.rkt)
-
-
-;Tareas
-;boton reinicio
-;animacion
-;repeticion
-
+(require "PDC.rkt")
 
 
 (define frame (new frame% [label "KnightTour"]
                    [width 1100]
                    [height 800]))
 (define input (new text-field% [label "Enter a chessboard matrix "] [parent frame]))
-(define target (make-bitmap 1100 800)) ; A 30x30 bitmap
+;(define input2 (new text-field% [label "Enter a chessboard solution "] [parent frame]))
+(define target (make-bitmap 1100 800))
 (define image-file "chess-knight.png")
 (define image (read-bitmap image-file))
 (define texto-input (make-parameter ""))
-
 (define matrix 0)
-
-
 (define (button-callback b e)
-  (let ((text (send input get-value)))
+  (let ((text (send input get-value)) )
   (set! matrix (string->number text))
   (cond((and(<= (string->number text) 16)(>= (string->number text) 5))
-           ;(chessboard)
-           (PDC-Test '((1 2)(2 0)))
+          
+           (PDC-Paint text '((1 14 9 20 3)
+(24 19 2 15 10)
+(13 8 23 4 21)
+(18 25 6 11 16)
+(7 12 17 22 5)))
            )      
          (else (message-box "Error" "Invalid matrix, expecting 5x5 to 16x16" frame '(stop ok))))))
 
@@ -39,16 +34,17 @@
 (new button% [parent frame]
              [label "Check"]
              [callback button-callback]
-             ; Callback procedure for a button click
              )
 
 
 ; matrix chessboard generator
-
-
 (define color 0)
 
-(define (PDC-Test sol)
+;                           __________________________________________________________________________
+;__________________________/ PDC-Paint
+
+(define (PDC-Paint num userSol)
+ 
   
 (new canvas% [parent frame]
              [paint-callback
@@ -57,27 +53,19 @@
                 (let ([Y 20] [X 20] [color 0] [num matrix] [colorChess matrix])
                 (send dc set-scale 4 4)
                 (send dc set-text-foreground "Sea Green")
-                
                 (for ([i (range 1 (+ num 1))])
-                  
                   (for ([a (range 1 (+ num 1))])
-                    
                    (cond
-                     
                       [(= 1 color)
                        (send dc set-brush "Dark Sea Green" 'solid)
                        (send dc set-pen "Dark Sea Green" 1 'solid)
                        (send dc draw-rectangle (* X a) (* Y i) 20 20)
-                       
                        (set! color 0)]
-                      
                       [(= 0 color)
                        (send dc set-brush "white" 'solid)
                        (send dc draw-rectangle (* X a) (* Y i) 20 20)
-                       
                        (set! color 1)]
                       ))
-
                   (cond
                     [(equal? (zero? (modulo colorChess 2)) (zero? (- color 0)))
                      (set! color 1)]
@@ -87,7 +75,8 @@
                   ))
                 (define WIDTH 400)
                 (send dc draw-text "Knight's Tour" 0 0)
-                (adjustSol (getMov num sol) dc)
+                (define finalResult (getMov (string->number num) userSol))
+                (adjustSol finalResult dc)
             )]))
 
 
@@ -98,51 +87,30 @@
    (let ((newSol
          (map (lambda (fila)
                 (map (lambda (elemento)
-                       (if (= elemento 0)
-                           (+ elemento 20)
-                           (*(+ elemento 1) 20)
-                           ))
+                           (* elemento 20))
                      fila))
               sol)))
      (display newSol)
     (animation newSol dc)))
 
 
-;animated knight with updated solution
+;knight tour solution
 
 (define x-af 20)
 (define y-af 20)
 (define x-be 0)
 (define y-be 0)
 
-(define matriz '((1 2) (4 5) (7 8)))
-;(display (list-ref (list-ref matriz 0) 1)) ;; Imprime el elemento en la fila 1, columna 2 (6)
-
-
-
 (define(animation sol dc)
-
-  ;(send dc set-brush "Forest Green" 'solid)
-  ;(send dc set-pen "Forest Green" 1 'solid)
-  ;(send dc draw-rectangle x-af y-af 20 20)
-  ;(send dc draw-rectangle x-be y-be 20 20)
   (send dc set-pen "Dark Gray" 2 'solid)
-  ;(send dc draw-line x-af y-af 30 30)
-
   (cond[(null? sol)
-
         (display "finished")
        ][(= 1 (length sol))
-
-          
           (set! x-af x-be)
           (set! y-af y-be)
           (set! x-be (list-ref (list-ref sol 0)0))
           (set! y-be (list-ref (list-ref sol 0)1))
           (send dc draw-line (+ 10 x-be) (+ 10 y-be) (+ 10 x-af) (+ 10 y-af))
-
-         
-
           ]
        [else
 
@@ -152,18 +120,13 @@
           (set! y-be (list-ref (list-ref sol 0)1))
           (set! x-af (list-ref (list-ref sol 1)0))
           (set! y-af (list-ref (list-ref sol 1)1))
-
-          (send dc draw-line (+ 10 x-be) (+ 10 y-be) (+ 10 x-af) (+ 10 y-af))
-          
-          
+          (send dc draw-line (+ 10 x-be) (+ 10 y-be) (+ 10 x-af) (+ 10 y-af)) 
           ;(sleep/yield 0.5)
           
           (animation (cdr sol) dc)
           ]
        )
-  ;(send dc set-scale 4 4)
   )
-
 
 (define msg (new message% [parent frame]
                           [label "submit "]))

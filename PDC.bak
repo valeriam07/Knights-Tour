@@ -94,7 +94,7 @@
        ((equal? (getsize sol) 1) "si es una posible solucion") ;llego al ultimo movimiento
        ((eq? (miembro (cadr sol) (possibleMoves (car sol) size mov)) #t) (test_aux size (cdr sol) (append mov (list(cadr sol)))))
        (else "No es solucion")))
-(provide getMov)
+
 (define (getMov size sol)
   (getMov_aux size sol '() 1)
   )
