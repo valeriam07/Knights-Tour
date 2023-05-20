@@ -385,5 +385,4 @@
 (define (movLeft_Bott row column)
   (list (+ row 1) (- column 2)))
 
-;(PDC-Todas 5 '(1 1))
-
+(PDC-Todas 5 '(1 1))
